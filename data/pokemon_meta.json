@@ -3,43 +3,429 @@
     "pokemon": "한카리아스",
     "ko_name": "한카리아스",
     "slug": "garchomp",
-    "source": "manual cache seeded from OP.GG style data",
-    "updated_at": "2026-07-06",
+    "source": "OP.GG Pokemon Champions Pokedex",
+    "updated_at": "",
     "battle_format": "single",
-    "data_quality": "manual_cache",
+    "data_quality": "live_opgg_parse",
     "summary": {
-      "role": "고속 물리 어태커 / 스텔스록 전개 / 전기 무효 피벗",
+      "role": null,
       "common_moves": [
-        {"name": "지진", "rate": 99.4, "description": "주력 땅 물리 타점"},
-        {"name": "스텔스록", "rate": 49.0, "description": "교체 압박용 장판"},
-        {"name": "역린", "rate": 44.6, "description": "강한 드래곤 물리 타점"},
-        {"name": "암석봉인", "rate": 34.1, "description": "스피드 하락 압박"},
-        {"name": "스케일샷", "rate": 30.6, "description": "스피드 상승형 공격"}
+        {
+          "name": "지진",
+          "rate": 99.4,
+          "description": null
+        },
+        {
+          "name": "스텔스록",
+          "rate": 49.0,
+          "description": null
+        },
+        {
+          "name": "역린",
+          "rate": 44.6,
+          "description": null
+        },
+        {
+          "name": "암석봉인",
+          "rate": 34.1,
+          "description": null
+        },
+        {
+          "name": "스케일샷",
+          "rate": 30.6,
+          "description": null
+        },
+        {
+          "name": "드래곤테일",
+          "rate": 25.4,
+          "description": null
+        },
+        {
+          "name": "칼춤",
+          "rate": 23.1,
+          "description": null
+        },
+        {
+          "name": "스톤샤워",
+          "rate": 17.8,
+          "description": null
+        },
+        {
+          "name": "압정뿌리기",
+          "rate": 17.5,
+          "description": null
+        },
+        {
+          "name": "독찌르기",
+          "rate": 14.9,
+          "description": null
+        }
       ],
       "common_items": [
-        {"name": "기합의띠", "rate": 37.5, "description": "1회 생존"},
-        {"name": "자뭉열매", "rate": 23.5, "description": "체력 회복"},
-        {"name": "구애스카프", "rate": 22.7, "description": "스피드 1.5배"},
-        {"name": "생명의구슬", "rate": 5.2, "description": "화력 증가"}
+        {
+          "name": "기합의띠",
+          "rate": 37.5,
+          "description": null
+        },
+        {
+          "name": "자뭉열매",
+          "rate": 23.5,
+          "description": null
+        },
+        {
+          "name": "구애스카프",
+          "rate": 22.7,
+          "description": null
+        },
+        {
+          "name": "생명의구슬",
+          "rate": 5.3,
+          "description": null
+        },
+        {
+          "name": "리샘열매",
+          "rate": 4.7,
+          "description": null
+        },
+        {
+          "name": "한카리아스나이트",
+          "rate": 1.2,
+          "description": null
+        },
+        {
+          "name": "먹다남은음식",
+          "rate": 1.1,
+          "description": null
+        },
+        {
+          "name": "플카열매",
+          "rate": 0.9,
+          "description": null
+        },
+        {
+          "name": "하반열매",
+          "rate": 0.5,
+          "description": null
+        },
+        {
+          "name": "선제공격손톱",
+          "rate": 0.4,
+          "description": null
+        }
       ],
       "common_abilities": [
-        {"name": "까칠한피부", "rate": 99.0, "description": "접촉 공격한 상대에게 반동 피해"}
+        {
+          "name": "까칠한피부",
+          "rate": 99.0,
+          "description": null
+        },
+        {
+          "name": "모래숨기",
+          "rate": 1.0,
+          "description": null
+        }
       ],
       "common_natures": [
-        {"name": "명랑", "rate": 56.6, "description": "+스피드 -특수공격"},
-        {"name": "고집", "rate": 23.1, "description": "+공격 -특수공격"},
-        {"name": "장난꾸러기", "rate": 16.7, "description": "+방어 -특수공격"}
+        {
+          "name": "명랑",
+          "rate": 56.6,
+          "description": null
+        },
+        {
+          "name": "고집",
+          "rate": 23.1,
+          "description": null
+        },
+        {
+          "name": "장난꾸러기",
+          "rate": 16.7,
+          "description": null
+        },
+        {
+          "name": "신중",
+          "rate": 1.6,
+          "description": null
+        },
+        {
+          "name": "천진난만",
+          "rate": 0.5,
+          "description": null
+        },
+        {
+          "name": "개구쟁이",
+          "rate": 0.3,
+          "description": null
+        },
+        {
+          "name": "성급",
+          "rate": 0.2,
+          "description": null
+        },
+        {
+          "name": "대담",
+          "rate": 0.2,
+          "description": null
+        },
+        {
+          "name": "외로움",
+          "rate": 0.2,
+          "description": null
+        },
+        {
+          "name": "용감",
+          "rate": 0.1,
+          "description": null
+        }
       ],
       "common_evs": [
-        "53.1% / HP 2 공격 32 방어 0 특수공격 0 특수방어 0 스피드 32",
-        "7.0% / HP 0 공격 32 방어 2 특수공격 0 특수방어 0 스피드 32"
+        "53.1% / H2 / A32 / B0 / C0 / D0 / S32",
+        "7% / H0 / A32 / B2 / C0 / D0 / S32",
+        "4% / H32 / A0 / B32 / C0 / D0 / S2",
+        "3% / H0 / A32 / B0 / C0 / D2 / S32",
+        "2.9% / H0 / A32 / B1 / C0 / D1 / S32"
       ],
-      "partners": [],
-      "winning_matchups": [],
+      "common_stat_allocations": [
+        {
+          "rate": 53.1,
+          "hp": 2,
+          "atk": 32,
+          "defense": 0,
+          "spa": 0,
+          "spd": 0,
+          "spe": 32,
+          "label": "H2 / A32 / B0 / C0 / D0 / S32",
+          "raw": [
+            "HP",
+            "2",
+            "공격",
+            "32",
+            "방어",
+            "0",
+            "특수공격",
+            "0",
+            "특수방어",
+            "0",
+            "스피드",
+            "32"
+          ],
+          "note": "포켓몬 챔피언스 노력치 기준: H/A/B/C/D/S 각 항목 최대 32"
+        },
+        {
+          "rate": 7.0,
+          "hp": 0,
+          "atk": 32,
+          "defense": 2,
+          "spa": 0,
+          "spd": 0,
+          "spe": 32,
+          "label": "H0 / A32 / B2 / C0 / D0 / S32",
+          "raw": [
+            "HP",
+            "0",
+            "공격",
+            "32",
+            "방어",
+            "2",
+            "특수공격",
+            "0",
+            "특수방어",
+            "0",
+            "스피드",
+            "32"
+          ],
+          "note": "포켓몬 챔피언스 노력치 기준: H/A/B/C/D/S 각 항목 최대 32"
+        },
+        {
+          "rate": 4.0,
+          "hp": 32,
+          "atk": 0,
+          "defense": 32,
+          "spa": 0,
+          "spd": 0,
+          "spe": 2,
+          "label": "H32 / A0 / B32 / C0 / D0 / S2",
+          "raw": [
+            "HP",
+            "32",
+            "공격",
+            "0",
+            "방어",
+            "32",
+            "특수공격",
+            "0",
+            "특수방어",
+            "0",
+            "스피드",
+            "2"
+          ],
+          "note": "포켓몬 챔피언스 노력치 기준: H/A/B/C/D/S 각 항목 최대 32"
+        },
+        {
+          "rate": 3.0,
+          "hp": 0,
+          "atk": 32,
+          "defense": 0,
+          "spa": 0,
+          "spd": 2,
+          "spe": 32,
+          "label": "H0 / A32 / B0 / C0 / D2 / S32",
+          "raw": [
+            "HP",
+            "0",
+            "공격",
+            "32",
+            "방어",
+            "0",
+            "특수공격",
+            "0",
+            "특수방어",
+            "2",
+            "스피드",
+            "32"
+          ],
+          "note": "포켓몬 챔피언스 노력치 기준: H/A/B/C/D/S 각 항목 최대 32"
+        },
+        {
+          "rate": 2.9,
+          "hp": 0,
+          "atk": 32,
+          "defense": 1,
+          "spa": 0,
+          "spd": 1,
+          "spe": 32,
+          "label": "H0 / A32 / B1 / C0 / D1 / S32",
+          "raw": [
+            "HP",
+            "0",
+            "공격",
+            "32",
+            "방어",
+            "1",
+            "특수공격",
+            "0",
+            "특수방어",
+            "1",
+            "스피드",
+            "32"
+          ],
+          "note": "포켓몬 챔피언스 노력치 기준: H/A/B/C/D/S 각 항목 최대 32"
+        }
+      ],
+      "stat_allocation_notes": [
+        "포켓몬 챔피언스 노력치는 H/A/B/C/D/S 각 항목 최대 32 기준으로 해석합니다."
+      ],
+      "partners": [
+        {
+          "name": "따라큐",
+          "rate": null,
+          "description": "따라큐"
+        },
+        {
+          "name": "마스카나",
+          "rate": null,
+          "description": "마스카나"
+        },
+        {
+          "name": "메타그로스",
+          "rate": null,
+          "description": "메타그로스"
+        },
+        {
+          "name": "브리두라스",
+          "rate": null,
+          "description": "브리두라스"
+        },
+        {
+          "name": "알로라 나인테일",
+          "rate": null,
+          "description": "알로라 나인테일"
+        },
+        {
+          "name": "리자몽",
+          "rate": null,
+          "description": "리자몽"
+        },
+        {
+          "name": "라이츄",
+          "rate": null,
+          "description": "라이츄"
+        },
+        {
+          "name": "번치코",
+          "rate": null,
+          "description": "번치코"
+        },
+        {
+          "name": "아머까오",
+          "rate": null,
+          "description": "아머까오"
+        },
+        {
+          "name": "누리레느",
+          "rate": null,
+          "description": "누리레느"
+        }
+      ],
+      "winning_matchups": [
+        {
+          "name": "한카리아스",
+          "rate": null,
+          "description": "한카리아스"
+        },
+        {
+          "name": "라이츄",
+          "rate": null,
+          "description": "라이츄"
+        },
+        {
+          "name": "리자몽",
+          "rate": null,
+          "description": "리자몽"
+        },
+        {
+          "name": "킬라플로르",
+          "rate": null,
+          "description": "킬라플로르"
+        },
+        {
+          "name": "브리두라스",
+          "rate": null,
+          "description": "브리두라스"
+        },
+        {
+          "name": "번치코",
+          "rate": null,
+          "description": "번치코"
+        },
+        {
+          "name": "따라큐",
+          "rate": null,
+          "description": "따라큐"
+        },
+        {
+          "name": "메타그로스",
+          "rate": null,
+          "description": "메타그로스"
+        },
+        {
+          "name": "삼삼드래",
+          "rate": null,
+          "description": "삼삼드래"
+        },
+        {
+          "name": "마스카나",
+          "rate": null,
+          "description": "마스카나"
+        }
+      ],
       "losing_matchups": [],
-      "raw": {}
+      "raw": {
+        "url": "https://op.gg/ko/pokemon-champions/pokedex/garchomp",
+        "line_count": 1099
+      }
     },
-    "notes": "대표 추정 샘플. OP.GG 포켓덱스에서 확인 가능한 사용률 기반으로 수동 시드한 캐시."
+    "notes": "OP.GG 페이지 텍스트 파싱 기반. 사이트 구조 변경 시 일부 항목이 누락될 수 있음.",
+    "cache_saved_at": "2026-07-06T07:08:25.356609+00:00"
   },
   "metagross": {
     "pokemon": "메타그로스",
@@ -52,21 +438,57 @@
     "summary": {
       "role": "강철 물리 에이스 / 얼음·바위 대응 / 메가 에이스 후보",
       "common_moves": [
-        {"name": "아이언헤드", "rate": null, "description": "강철 주력 타점"},
-        {"name": "사념의박치기", "rate": null, "description": "에스퍼 주력 타점"},
-        {"name": "지진", "rate": null, "description": "강철/불꽃/전기 견제"},
-        {"name": "냉동펀치", "rate": null, "description": "드래곤/땅 견제"}
+        {
+          "name": "아이언헤드",
+          "rate": null,
+          "description": "강철 주력 타점"
+        },
+        {
+          "name": "사념의박치기",
+          "rate": null,
+          "description": "에스퍼 주력 타점"
+        },
+        {
+          "name": "지진",
+          "rate": null,
+          "description": "강철/불꽃/전기 견제"
+        },
+        {
+          "name": "냉동펀치",
+          "rate": null,
+          "description": "드래곤/땅 견제"
+        }
       ],
       "common_items": [
-        {"name": "메타그로스나이트", "rate": null, "description": "메가진화 운용"},
-        {"name": "돌격조끼", "rate": null, "description": "특수 내구 보강"}
+        {
+          "name": "메타그로스나이트",
+          "rate": null,
+          "description": "메가진화 운용"
+        },
+        {
+          "name": "돌격조끼",
+          "rate": null,
+          "description": "특수 내구 보강"
+        }
       ],
       "common_abilities": [
-        {"name": "클리어바디", "rate": null, "description": "능력치 하락 방지"}
+        {
+          "name": "클리어바디",
+          "rate": null,
+          "description": "능력치 하락 방지"
+        }
       ],
       "common_natures": [
-        {"name": "고집", "rate": null, "description": "+공격 -특수공격"},
-        {"name": "명랑", "rate": null, "description": "+스피드 -특수공격"}
+        {
+          "name": "고집",
+          "rate": null,
+          "description": "+공격 -특수공격"
+        },
+        {
+          "name": "명랑",
+          "rate": null,
+          "description": "+스피드 -특수공격"
+        }
       ],
       "common_evs": [],
       "partners": [],
@@ -87,22 +509,62 @@
     "summary": {
       "role": "격투/강철 고화력 에이스 / 얼음·바위 처리 / 선공기 마무리",
       "common_moves": [
-        {"name": "인파이트", "rate": null, "description": "격투 주력 타점"},
-        {"name": "코멧펀치", "rate": null, "description": "강철 물리 타점"},
-        {"name": "신속", "rate": null, "description": "우선도 마무리"},
-        {"name": "칼춤", "rate": null, "description": "스윕 준비"}
+        {
+          "name": "인파이트",
+          "rate": null,
+          "description": "격투 주력 타점"
+        },
+        {
+          "name": "코멧펀치",
+          "rate": null,
+          "description": "강철 물리 타점"
+        },
+        {
+          "name": "신속",
+          "rate": null,
+          "description": "우선도 마무리"
+        },
+        {
+          "name": "칼춤",
+          "rate": null,
+          "description": "스윕 준비"
+        }
       ],
       "common_items": [
-        {"name": "루카리오나이트", "rate": null, "description": "메가진화 운용"},
-        {"name": "기합의띠", "rate": null, "description": "안정적 행동 보장"}
+        {
+          "name": "루카리오나이트",
+          "rate": null,
+          "description": "메가진화 운용"
+        },
+        {
+          "name": "기합의띠",
+          "rate": null,
+          "description": "안정적 행동 보장"
+        }
       ],
       "common_abilities": [
-        {"name": "정신력", "rate": null, "description": "풀죽음 방지"},
-        {"name": "적응력", "rate": null, "description": "메가루카리오 화력 핵심"}
+        {
+          "name": "정신력",
+          "rate": null,
+          "description": "풀죽음 방지"
+        },
+        {
+          "name": "적응력",
+          "rate": null,
+          "description": "메가루카리오 화력 핵심"
+        }
       ],
       "common_natures": [
-        {"name": "명랑", "rate": null, "description": "+스피드 -특수공격"},
-        {"name": "고집", "rate": null, "description": "+공격 -특수공격"}
+        {
+          "name": "명랑",
+          "rate": null,
+          "description": "+스피드 -특수공격"
+        },
+        {
+          "name": "고집",
+          "rate": null,
+          "description": "+공격 -특수공격"
+        }
       ],
       "common_evs": [],
       "partners": [],

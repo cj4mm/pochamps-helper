@@ -17,7 +17,7 @@ from app.services.team_logic import (
 
 app = FastAPI(
     title="Pokemon Champions Helper API",
-    version="0.11.0",
+    version="0.12.0",
     description="Pokemon Champions meta/sample lookup API for Custom GPT Actions.",
 )
 
@@ -75,10 +75,27 @@ def _infer_role(summary: Dict[str, Any]) -> str:
     return base
 
 
+
+def _stat_allocation_label(allocation: Dict[str, Any]) -> Optional[str]:
+    if not allocation:
+        return None
+    label = allocation.get("label")
+    rate = allocation.get("rate")
+    if label and isinstance(rate, (int, float)):
+        return f"{label} ({rate:g}%)"
+    return label
+
+
+def _top_stat_allocation(summary: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    allocations = summary.get("common_stat_allocations") or []
+    return allocations[0] if allocations else None
+
 def _build_representative_set(meta: Dict[str, Any]) -> Dict[str, Any]:
     summary = meta.get("summary", {})
     role = summary.get("role") or _infer_role(summary)
     moves = _entry_names(summary.get("common_moves", []), 4)
+
+    top_allocation = _top_stat_allocation(summary)
 
     return {
         "label": role,
@@ -86,11 +103,14 @@ def _build_representative_set(meta: Dict[str, Any]) -> Dict[str, Any]:
         "ability": _first_name(summary.get("common_abilities", [])),
         "item": _first_name(summary.get("common_items", [])),
         "moves": moves,
+        "stat_allocation": top_allocation,
+        "stat_allocation_label": _stat_allocation_label(top_allocation) if top_allocation else None,
         "evidence": {
             "moves": _rate_label(summary.get("common_moves", []), 6),
             "items": _rate_label(summary.get("common_items", []), 5),
             "abilities": _rate_label(summary.get("common_abilities", []), 3),
             "natures": _rate_label(summary.get("common_natures", []), 5),
+            "stat_allocations": [_stat_allocation_label(x) for x in summary.get("common_stat_allocations", [])[:5] if _stat_allocation_label(x)],
         },
     }
 
@@ -130,6 +150,11 @@ def _build_threat_notes(meta: Dict[str, Any]) -> List[str]:
         top = natures[0]
         if top.get("name") and isinstance(top.get("rate"), (int, float)):
             notes.append(f"성격은 {top['name']}({top['rate']:g}%)이 가장 많아 해당 스피드/화력 기준으로 계산 필요")
+
+    top_alloc = _top_stat_allocation(summary)
+    alloc_label = _stat_allocation_label(top_alloc) if top_alloc else None
+    if alloc_label:
+        notes.append(f"대표 노력치 분배는 {alloc_label} 기준으로 확인됨. 포챔스 노력치는 각 스탯 최대 32 기준")
 
     # Deduplicate while preserving order
     seen = set()
@@ -182,12 +207,14 @@ def build_advice(meta: Dict[str, Any]) -> Dict[str, Any]:
         "representative_set": _build_representative_set(meta),
         "threat_notes": _build_threat_notes(meta),
         "counterplay": _build_counterplay(meta),
+        "stat_allocations": summary.get("common_stat_allocations", []),
+        "stat_allocation_notes": summary.get("stat_allocation_notes", ["포켓몬 챔피언스 노력치는 H/A/B/C/D/S 각 항목 최대 32 기준으로 해석합니다."]),
         "related": {
             "partners": _entry_names(summary.get("partners", []), 6),
             "winning_matchups": _entry_names(summary.get("winning_matchups", []), 6),
             "losing_matchups": _entry_names(summary.get("losing_matchups", []), 6),
         },
-        "notes": "사용률 데이터 조합 기반의 대표 추정 샘플임. 실제 공개 샘플이 아니라면 확정 세트로 단정하지 말 것.",
+        "notes": "사용률 데이터 조합 기반의 대표 추정 샘플임. 포켓몬 챔피언스 노력치는 기존 252 방식이 아니라 각 스탯 최대 32 기준으로 표현함. 실제 공개 샘플이 아니라면 확정 세트로 단정하지 말 것.",
     }
 
 
@@ -217,7 +244,7 @@ def list_available_pokemon():
 
 @app.get("/")
 def root():
-    return {"ok": True, "name": "Pokemon Champions Helper API", "version": "0.11.0"}
+    return {"ok": True, "name": "Pokemon Champions Helper API", "version": "0.12.0"}
 
 @app.get("/pokemon/{name}", response_model=PokemonMeta, operation_id="getPokemonMeta")
 def get_pokemon_meta(

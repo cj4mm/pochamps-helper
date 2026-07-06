@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Pokemon Champions Helper API
-  version: "1.0.11"
+  version: "1.0.12"
   description: Pokemon Champions OP.GG meta lookup, safe team selection, party building, and team analysis API.
 servers:
   - url: https://pochamps-helper.onrender.com
@@ -57,6 +57,29 @@ paths:
                         type: array
                         items:
                           type: string
+                      stat_allocation_label:
+                        type: string
+                      stat_allocation:
+                        type: object
+                        properties:
+                          rate:
+                            type: number
+                          hp:
+                            type: integer
+                          atk:
+                            type: integer
+                          defense:
+                            type: integer
+                          spa:
+                            type: integer
+                          spd:
+                            type: integer
+                          spe:
+                            type: integer
+                          label:
+                            type: string
+                          note:
+                            type: string
                       evidence:
                         type: object
                         properties:
@@ -76,6 +99,37 @@ paths:
                             type: array
                             items:
                               type: string
+                          stat_allocations:
+                            type: array
+                            items:
+                              type: string
+                  stat_allocations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rate:
+                          type: number
+                        hp:
+                          type: integer
+                        atk:
+                          type: integer
+                        defense:
+                          type: integer
+                        spa:
+                          type: integer
+                        spd:
+                          type: integer
+                        spe:
+                          type: integer
+                        label:
+                          type: string
+                        note:
+                          type: string
+                  stat_allocation_notes:
+                    type: array
+                    items:
+                      type: string
                   threat_notes:
                     type: array
                     items:

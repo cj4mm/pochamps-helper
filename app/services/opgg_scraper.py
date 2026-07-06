@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 import httpx
 from bs4 import BeautifulSoup
 
-from app.models import PokemonMeta, PokemonSummary, RateEntry
+from app.models import PokemonMeta, PokemonSummary, RateEntry, StatAllocation
 
 BASE_URL = "https://op.gg/ko/pokemon-champions/pokedex/{slug}"
 HEADERS = {
@@ -252,36 +252,135 @@ def _parse_ranked_section(lines: List[str], heading: str, limit: int = 10) -> Li
     return entries
 
 
-def _parse_evs(lines: List[str], limit: int = 5) -> List[str]:
+STAT_KEY_ALIASES = {
+    "HP": "hp", "H": "hp", "체력": "hp",
+    "공격": "atk", "A": "atk", "ATK": "atk",
+    "방어": "defense", "B": "defense", "DEF": "defense",
+    "특수공격": "spa", "특공": "spa", "C": "spa", "SPA": "spa",
+    "특수방어": "spd", "특방": "spd", "D": "spd", "SPD": "spd",
+    "스피드": "spe", "속도": "spe", "S": "spe", "SPE": "spe",
+}
+STAT_DISPLAY_ORDER = [
+    ("hp", "H"), ("atk", "A"), ("defense", "B"), ("spa", "C"), ("spd", "D"), ("spe", "S"),
+]
+CHAMPIONS_STAT_MAX = 32
+
+
+def _is_next_rank(lines: List[str], idx: int) -> bool:
+    return idx + 1 < len(lines) and lines[idx].isdigit() and _parse_rate(lines[idx + 1]) is not None
+
+
+def _collect_rank_block(lines: List[str], idx_after_rate: int, max_lines: int = 40) -> Tuple[List[str], int]:
+    """Collect raw text for one ranked OP.GG row until the next ranked row/section.
+
+    This is mainly used for Champions stat allocation rows. OP.GG often splits an
+    allocation across many lines like `HP`, `32`, `공격`, `32` rather than one cell.
+    """
+    raw: List[str] = []
+    i = idx_after_rate
+    while i < len(lines) and len(raw) < max_lines:
+        line = lines[i]
+        if _is_section_heading(line):
+            break
+        if _is_next_rank(lines, i) and raw:
+            break
+        if not _is_junk_entry(line):
+            raw.append(_normalize_entry_text(line))
+        i += 1
+    return raw, i
+
+
+def _parse_stat_values(raw_lines: List[str]) -> dict:
+    values = {}
+    # First, parse adjacent `stat name` + `number` lines.
+    for i, line in enumerate(raw_lines):
+        key = STAT_KEY_ALIASES.get(line)
+        if key and i + 1 < len(raw_lines):
+            nxt = raw_lines[i + 1]
+            if re.fullmatch(r"\d{1,2}", nxt):
+                val = int(nxt)
+                if 0 <= val <= CHAMPIONS_STAT_MAX:
+                    values[key] = val
+
+    # Also parse compact lines such as `HP 32 공격 32 스피드 32`.
+    joined = " ".join(raw_lines)
+    # Normalize common Korean two-word variants before regex matching.
+    joined = joined.replace("특수 공격", "특수공격").replace("특수 방어", "특수방어")
+    pattern = r"(HP|H|체력|공격|A|방어|B|특수공격|특공|C|특수방어|특방|D|스피드|속도|S)\s*[:=]?\s*(\d{1,2})"
+    for stat, val_s in re.findall(pattern, joined, flags=re.IGNORECASE):
+        key = STAT_KEY_ALIASES.get(stat) or STAT_KEY_ALIASES.get(stat.upper())
+        if key:
+            val = int(val_s)
+            if 0 <= val <= CHAMPIONS_STAT_MAX:
+                values[key] = val
+    return values
+
+
+def _format_stat_label(values: dict) -> str:
+    parts = []
+    for key, short in STAT_DISPLAY_ORDER:
+        val = values.get(key)
+        if val is not None:
+            parts.append(f"{short}{val}")
+    return " / ".join(parts)
+
+
+def _parse_stat_allocations(lines: List[str], limit: int = 5) -> List[StatAllocation]:
     start = _find_heading_index(lines, "노력치")
     if start is None:
         return []
 
-    evs: List[str] = []
+    allocations: List[StatAllocation] = []
     i = start + 1
-    while i < len(lines) and len(evs) < limit:
+    while i < len(lines) and len(allocations) < limit:
         line = lines[i]
         if _is_section_heading(line) and line != "노력치":
             break
+
+        rate = None
+        next_idx = None
         rank_rate = _parse_rank_rate(line)
         if rank_rate:
             _, rate = rank_rate
-            found = _next_entry_text(lines, i + 1)
-            if found:
-                text, next_i = found
-                evs.append(f"{rate}% / {text}")
-                i = next_i
-                continue
-        if line.isdigit() and i + 2 < len(lines):
-            rate = _parse_rate(lines[i + 1])
-            if rate is not None:
-                found = _next_entry_text(lines, i + 2)
-                if found:
-                    text, next_i = found
-                    evs.append(f"{rate}% / {text}")
-                    i = next_i
-                    continue
+            next_idx = i + 1
+        elif line.isdigit() and i + 1 < len(lines):
+            parsed_rate = _parse_rate(lines[i + 1])
+            if parsed_rate is not None:
+                rate = parsed_rate
+                next_idx = i + 2
+
+        if rate is not None and next_idx is not None:
+            raw, after = _collect_rank_block(lines, next_idx)
+            values = _parse_stat_values(raw)
+            label = _format_stat_label(values)
+            if not label and raw:
+                # Keep a compact raw label so the user can still inspect OP.GG text.
+                label = " / ".join(raw[:8])
+            allocations.append(StatAllocation(
+                rate=rate,
+                hp=values.get("hp"),
+                atk=values.get("atk"),
+                defense=values.get("defense"),
+                spa=values.get("spa"),
+                spd=values.get("spd"),
+                spe=values.get("spe"),
+                label=label,
+                raw=raw[:16],
+                note="포켓몬 챔피언스 노력치 기준: H/A/B/C/D/S 각 항목 최대 32",
+            ))
+            i = after
+            continue
         i += 1
+    return allocations
+
+
+def _parse_evs(lines: List[str], limit: int = 5) -> List[str]:
+    # Backward-compatible compact labels. Detailed structured data is available in
+    # `common_stat_allocations` and uses Champions' 0~32-per-stat scale.
+    evs: List[str] = []
+    for alloc in _parse_stat_allocations(lines, limit=limit):
+        prefix = f"{alloc.rate:g}%" if alloc.rate is not None else "?%"
+        evs.append(f"{prefix} / {alloc.label or '원문 파싱 필요'}")
     return evs
 
 
@@ -368,6 +467,8 @@ def fetch_opgg_meta(slug: str, battle_format: str = "single") -> PokemonMeta:
         common_abilities=_parse_ranked_section(lines, "특성"),
         common_natures=_parse_ranked_section(lines, "스탯 조정"),
         common_evs=_parse_evs(lines),
+        common_stat_allocations=_parse_stat_allocations(lines),
+        stat_allocation_notes=["포켓몬 챔피언스 노력치는 H/A/B/C/D/S 각 항목 최대 32 기준으로 해석합니다."],
         partners=_parse_pokemon_list_section(lines, "파트너 포켓몬"),
         winning_matchups=_parse_pokemon_list_section(lines, "승리 상대"),
         losing_matchups=_parse_pokemon_list_section(lines, "패배 상대"),
