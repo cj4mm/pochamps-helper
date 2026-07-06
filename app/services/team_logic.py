@@ -48,7 +48,7 @@ POKEMON_TYPES: Dict[str, List[str]] = {
     "meowscarada": ["grass", "dark"],
     "primarina": ["water", "fairy"],
     "archaludon": ["steel", "dragon"],
-    "ninetales-alola": ["ice", "fairy"],
+    "ninetales-alolan": ["ice", "fairy"],
     "raichu": ["electric"],
     "blaziken": ["fire", "fighting"],
     "corviknight": ["flying", "steel"],
@@ -97,8 +97,8 @@ SPECIAL_HINT_MOVES = {"화염방사", "불대문자", "하이드로펌프", "냉
 PHYSICAL_HINT_MOVES = {"지진", "역린", "스케일샷", "사이코팽", "불릿펀치", "냉동펀치", "번개펀치", "아이언헤드", "코멧펀치", "인파이트", "치근거리기", "유턴", "브레이브버드", "플레어드라이브"}
 
 DEFAULT_BUILD_CANDIDATES = [
-    "garchomp", "metagross", "mimikyu", "meowscarada", "primarina", "charizard", "archaludon", "ninetales-alola",
-    "raichu", "blaziken", "corviknight", "hydreigon", "hippowdon", "gengar", "gyarados", "lucario", "tyranitar", "scizor", "gardevoir", "dragonite", "glimmora"
+    "garchomp", "metagross", "mimikyu", "meowscarada", "primarina", "charizard", "archaludon", "ninetales-alolan",
+    "raichu", "blaziken", "corviknight", "hydreigon", "hippowdon", "gengar", "gyarados", "lucario", "tyranitar", "scizor", "gardevoir", "dragonite", "glimmora", "staraptor", "talonflame"
 ]
 
 

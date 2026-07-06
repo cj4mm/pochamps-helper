@@ -17,7 +17,7 @@ from app.services.team_logic import (
 
 app = FastAPI(
     title="Pokemon Champions Helper API",
-    version="0.10.0",
+    version="0.11.0",
     description="Pokemon Champions meta/sample lookup API for Custom GPT Actions.",
 )
 
@@ -202,6 +202,23 @@ def debug_opgg_text(name: str):
     return fetch_opgg_debug(slug)
 
 
+
+
+@app.get("/pokemon/available", operation_id="listAvailablePokemon")
+def list_available_pokemon():
+    # This list is a practical candidate pool used by team building. It combines cached Pokemon and curated slugs.
+    slugs = sorted(set(list_cached_slugs()) | set(DEFAULT_BUILD_CANDIDATES))
+    return {
+        "slugs": slugs,
+        "count": len(slugs),
+        "notes": "Team recommendations only use Pokemon that resolve successfully from OP.GG Pokemon Champions. This list is a candidate pool, not an official full roster.",
+    }
+
+
+@app.get("/")
+def root():
+    return {"ok": True, "name": "Pokemon Champions Helper API", "version": "0.11.0"}
+
 @app.get("/pokemon/{name}", response_model=PokemonMeta, operation_id="getPokemonMeta")
 def get_pokemon_meta(
     name: str,
@@ -283,6 +300,42 @@ def _load_meta_for_team(name: str, refresh: bool, battle_format: str) -> Dict[st
     return _as_payload(meta)
 
 
+def _meta_display_name(meta: Dict[str, Any]) -> str:
+    return meta.get("pokemon") or meta.get("ko_name") or meta.get("slug") or "unknown"
+
+
+def _load_meta_safe(name: str, refresh: bool, battle_format: str) -> Dict[str, Any]:
+    slug = normalize_name(str(name))
+    try:
+        meta = _load_meta_for_team(str(name), refresh, battle_format)
+        return {"ok": True, "input": str(name), "slug": meta.get("slug") or slug, "meta": meta}
+    except Exception as e:
+        return {
+            "ok": False,
+            "input": str(name),
+            "slug": slug,
+            "reason": f"{type(e).__name__}: {e}",
+        }
+
+
+def _load_many_safe(names: List[Any], refresh: bool, battle_format: str, limit: int = 6) -> Dict[str, Any]:
+    metas: List[Dict[str, Any]] = []
+    unavailable: List[Dict[str, Any]] = []
+    seen_slugs = set()
+    for raw in names[:limit]:
+        res = _load_meta_safe(str(raw), refresh, battle_format)
+        if res["ok"]:
+            meta = res["meta"]
+            slug = meta.get("slug") or res.get("slug")
+            if slug in seen_slugs:
+                continue
+            seen_slugs.add(slug)
+            metas.append(meta)
+        else:
+            unavailable.append({"input": res["input"], "slug": res["slug"], "reason": res["reason"]})
+    return {"metas": metas, "unavailable": unavailable}
+
+
 @app.post("/team/analyze", operation_id="analyzeTeam")
 def analyze_team_endpoint(body: Dict[str, Any]):
     team = body.get("team") or body.get("my_team") or []
@@ -290,8 +343,17 @@ def analyze_team_endpoint(body: Dict[str, Any]):
     battle_format = body.get("battle_format", "single")
     if not isinstance(team, list) or not team:
         raise HTTPException(status_code=400, detail="team must be a non-empty list of Pokemon names")
-    metas = [_load_meta_for_team(str(name), refresh, battle_format) for name in team]
-    return analyze_team(metas)
+    loaded = _load_many_safe(team, refresh, battle_format, limit=6)
+    metas = loaded["metas"]
+    if not metas:
+        raise HTTPException(status_code=404, detail={"message": "No team Pokemon could be found in OP.GG Pokemon Champions data", "unavailable_pokemon": loaded["unavailable"]})
+    result = analyze_team(metas)
+    result["input_team"] = [str(x) for x in team[:6]]
+    result["unavailable_pokemon"] = loaded["unavailable"]
+    result["candidate_policy"] = "Only Pokemon successfully resolved from OP.GG Pokemon Champions are included in analysis."
+    if loaded["unavailable"]:
+        result.setdefault("warnings", []).append("일부 포켓몬은 OP.GG에서 조회 실패하여 분석에서 제외됨: " + ", ".join(x["input"] for x in loaded["unavailable"]))
+    return result
 
 
 @app.post("/team/selection", operation_id="recommendTeamSelection")
@@ -305,14 +367,30 @@ def recommend_team_selection(body: Dict[str, Any]):
         raise HTTPException(status_code=400, detail="my_team must contain at least 3 Pokemon names")
     if not isinstance(opponent_team, list) or not opponent_team:
         raise HTTPException(status_code=400, detail="opponent_team must contain at least 1 Pokemon name")
-    my_metas = [_load_meta_for_team(str(name), refresh, battle_format) for name in my_team[:6]]
-    opp_metas = [_load_meta_for_team(str(name), refresh, battle_format) for name in opponent_team[:6]]
+
+    my_loaded = _load_many_safe(my_team, refresh, battle_format, limit=6)
+    opp_loaded = _load_many_safe(opponent_team, refresh, battle_format, limit=6)
+    my_metas = my_loaded["metas"]
+    opp_metas = opp_loaded["metas"]
+
+    if len(my_metas) < 3:
+        raise HTTPException(status_code=404, detail={
+            "message": "At least 3 of my_team must be available in OP.GG Pokemon Champions data",
+            "available_my_team": [_meta_display_name(m) for m in my_metas],
+            "unavailable_pokemon": my_loaded["unavailable"],
+        })
+
     recs = selection_recommendations(my_metas, opp_metas, top_n=max(1, min(top_n, 5)))
+    skipped = {"my_team": my_loaded["unavailable"], "opponent_team": opp_loaded["unavailable"]}
     return {
-        "my_team": [m.get("pokemon") or m.get("ko_name") or m.get("slug") for m in my_metas],
-        "opponent_team": [m.get("pokemon") or m.get("ko_name") or m.get("slug") for m in opp_metas],
+        "input_my_team": [str(x) for x in my_team[:6]],
+        "input_opponent_team": [str(x) for x in opponent_team[:6]],
+        "my_team": [_meta_display_name(m) for m in my_metas],
+        "opponent_team": [_meta_display_name(m) for m in opp_metas],
         "recommended_selections": recs,
-        "notes": "3마리 선출 추천은 OP.GG 대표 사용률, 타입/역할 휴리스틱, 6C3 조합 점수 기반임. 실제 확정 대미지/스피드는 별도 계산 필요.",
+        "unavailable_pokemon": skipped,
+        "candidate_policy": "Selection is calculated only from Pokemon successfully resolved from OP.GG Pokemon Champions. Unavailable Pokemon are excluded and listed here.",
+        "notes": "3마리 선출 추천은 OP.GG 대표 사용률, 타입/역할 휴리스틱, 6C3 조합 점수 기반임. 조회 실패 포켓몬은 제외됨. 실제 확정 대미지/스피드는 별도 계산 필요.",
     }
 
 
@@ -326,9 +404,13 @@ def build_recommended_party(body: Dict[str, Any]):
         core = [core]
     if not isinstance(core, list) or not core:
         raise HTTPException(status_code=400, detail="core must be a non-empty list of Pokemon names")
-    core_metas = [_load_meta_for_team(str(name), refresh, battle_format) for name in core[:3]]
 
-    # Candidate pool: OP.GG partners of core + optional user candidates + default meta-ish pool.
+    core_loaded = _load_many_safe(core, refresh, battle_format, limit=3)
+    core_metas = core_loaded["metas"]
+    if not core_metas:
+        raise HTTPException(status_code=404, detail={"message": "No core Pokemon could be found in OP.GG Pokemon Champions data", "unavailable_pokemon": core_loaded["unavailable"]})
+
+    # Candidate pool: OP.GG partners of core + optional user candidates + curated OP.GG-tested default pool.
     candidates = []
     for m in core_metas:
         candidates.extend([p.get("name") for p in m.get("summary", {}).get("partners", []) if p.get("name")])
@@ -343,15 +425,20 @@ def build_recommended_party(body: Dict[str, Any]):
             deduped.append(c)
 
     candidate_metas = []
-    for name in deduped[:40]:
-        try:
-            candidate_metas.append(_load_meta_for_team(str(name), refresh=False, battle_format=battle_format))
-        except Exception:
-            # Some Korean partner names may not be in name map yet. Skip instead of failing the whole build.
-            continue
+    unavailable_candidates = []
+    for name in deduped[:60]:
+        res = _load_meta_safe(str(name), refresh=False, battle_format=battle_format)
+        if res["ok"]:
+            candidate_metas.append(res["meta"])
+        else:
+            unavailable_candidates.append({"input": res["input"], "slug": res["slug"], "reason": res["reason"]})
+    # Only OP.GG-resolved candidates are allowed into final recommendations.
     result = build_party(core_metas, candidate_metas, party_size=max(len(core_metas), min(party_size, 6)))
     result["candidate_count"] = len(candidate_metas)
+    result["unavailable_pokemon"] = {"core": core_loaded["unavailable"], "candidates": unavailable_candidates[:20]}
+    result["candidate_policy"] = "Recommended party uses only Pokemon successfully resolved from OP.GG Pokemon Champions. Failed candidates are excluded."
     return result
+
 
 
 @app.get("/pokemon/{name}/profile", operation_id="getPokemonProfile")

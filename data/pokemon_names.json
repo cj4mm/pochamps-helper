@@ -29,10 +29,7 @@
   "archaludon": "archaludon",
   "알로라 나인테일": "ninetales-alolan",
   "알로라나인테일": "ninetales-alolan",
-  "ninetales-alolan": "ninetales-alolan",
-  "alolan-ninetales": "ninetales-alolan",
-  "alolan ninetales": "ninetales-alolan",
-  "Alolan Ninetales": "ninetales-alolan",
+  "ninetales-alola": "ninetales-alolan",
   "라이츄": "raichu",
   "raichu": "raichu",
   "번치코": "blaziken",
@@ -59,5 +56,10 @@
   "마릴리": "azumarill",
   "azumarill": "azumarill",
   "너트령": "ferrothorn",
-  "ferrothorn": "ferrothorn"
+  "ferrothorn": "ferrothorn",
+  "ninetales-alolan": "ninetales-alolan",
+  "alolan-ninetales": "ninetales-alolan",
+  "alolan ninetales": "ninetales-alolan",
+  "Alolan Ninetales": "ninetales-alolan",
+  "나인테일 알로라": "ninetales-alolan"
 }

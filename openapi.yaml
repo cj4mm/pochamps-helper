@@ -1,56 +1,95 @@
 openapi: 3.1.0
 info:
   title: Pokemon Champions Helper API
-  version: "1.0.10"
-  description: Pokemon Champions OP.GG meta lookup, battle advice, team selection, and party building API.
+  version: "1.0.11"
+  description: Pokemon Champions OP.GG meta lookup, safe team selection, party building, and team analysis API.
 servers:
   - url: https://pochamps-helper.onrender.com
 paths:
-  /health:
-    get:
-      operationId: checkHealth
-      summary: Check API health
-      responses:
-        "200":
-          description: OK
   /pokemon/{name}/advice:
     get:
       operationId: getPokemonAdvice
-      summary: Get Pokemon Champions battle advice
-      description: Returns representative estimated set, threat notes, counterplay, partners, and matchup notes based on OP.GG Pokemon Champions data.
+      summary: Get Pokemon Champions battle advice for one Pokemon
       parameters:
         - name: name
           in: path
           required: true
-          description: Pokemon Korean name, English name, or slug. Examples include 한카리아스, 메타그로스, garchomp, metagross.
           schema:
             type: string
         - name: refresh
           in: query
           required: false
-          description: Whether to fetch live OP.GG data and update cache.
           schema:
             type: boolean
             default: false
         - name: battle_format
           in: query
           required: false
-          description: Battle format. Use single for current MVP.
           schema:
             type: string
             default: single
       responses:
         "200":
-          description: Battle advice response
+          description: Pokemon battle advice response
           content:
             application/json:
               schema:
                 type: object
+                properties:
+                  pokemon:
+                    type: string
+                  ko_name:
+                    type: string
+                  slug:
+                    type: string
+                  representative_set:
+                    type: object
+                    properties:
+                      label:
+                        type: string
+                      nature:
+                        type: string
+                      ability:
+                        type: string
+                      item:
+                        type: string
+                      moves:
+                        type: array
+                        items:
+                          type: string
+                      evidence:
+                        type: object
+                        properties:
+                          moves:
+                            type: array
+                            items:
+                              type: string
+                          items:
+                            type: array
+                            items:
+                              type: string
+                          abilities:
+                            type: array
+                            items:
+                              type: string
+                          natures:
+                            type: array
+                            items:
+                              type: string
+                  threat_notes:
+                    type: array
+                    items:
+                      type: string
+                  counterplay:
+                    type: array
+                    items:
+                      type: string
+                  notes:
+                    type: string
   /pokemon/{name}/profile:
     get:
       operationId: getPokemonProfile
-      summary: Get inferred role and type profile for one Pokemon
-      description: Returns inferred type profile, role tags, weaknesses, resistances, immunities, and common attacking types.
+      summary: Get derived role and type profile for one Pokemon
       parameters:
         - name: name
           in: path
@@ -76,11 +115,59 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  pokemon:
+                    type: string
+                  slug:
+                    type: string
+                  types:
+                    type: array
+                    items:
+                      type: string
+                  role_tags:
+                    type: array
+                    items:
+                      type: string
+                  weak_to:
+                    type: array
+                    items:
+                      type: string
+                  resists:
+                    type: array
+                    items:
+                      type: string
+                  immune_to:
+                    type: array
+                    items:
+                      type: string
+                  common_move_types:
+                    type: array
+                    items:
+                      type: string
+  /pokemon/available:
+    get:
+      operationId: listAvailablePokemon
+      summary: List current candidate slugs used by the team builder
+      responses:
+        "200":
+          description: Candidate slug list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slugs:
+                    type: array
+                    items:
+                      type: string
+                  count:
+                    type: integer
+                  notes:
+                    type: string
   /team/selection:
     post:
       operationId: recommendTeamSelection
-      summary: Recommend 3 Pokemon selection from a 6 Pokemon party against opponent team
-      description: Takes my_team and opponent_team, evaluates all 3-Pokemon combinations, and returns top recommended selections.
+      summary: Recommend 3 Pokemon selections from a 6 Pokemon team against opponent team
       requestBody:
         required: true
         content:
@@ -92,12 +179,10 @@ paths:
                   type: array
                   items:
                     type: string
-                  description: My 3-6 Pokemon names. Usually 6 names.
                 opponent_team:
                   type: array
                   items:
                     type: string
-                  description: Opponent 1-6 Pokemon names. Usually 6 names.
                 refresh:
                   type: boolean
                   default: false
@@ -117,11 +202,79 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  input_my_team:
+                    type: array
+                    items:
+                      type: string
+                  input_opponent_team:
+                    type: array
+                    items:
+                      type: string
+                  my_team:
+                    type: array
+                    items:
+                      type: string
+                  opponent_team:
+                    type: array
+                    items:
+                      type: string
+                  recommended_selections:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rank:
+                          type: integer
+                        selection:
+                          type: array
+                          items:
+                            type: string
+                        lead:
+                          type: string
+                        score:
+                          type: number
+                        reason:
+                          type: array
+                          items:
+                            type: string
+                        risks:
+                          type: array
+                          items:
+                            type: string
+                  unavailable_pokemon:
+                    type: object
+                    properties:
+                      my_team:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            slug:
+                              type: string
+                            reason:
+                              type: string
+                      opponent_team:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            slug:
+                              type: string
+                            reason:
+                              type: string
+                  candidate_policy:
+                    type: string
+                  notes:
+                    type: string
   /team/build:
     post:
       operationId: buildRecommendedParty
       summary: Build a recommended 6 Pokemon party around selected core Pokemon
-      description: Takes 1-3 core Pokemon and suggests a party using OP.GG partners, weakness coverage, and role balance.
       requestBody:
         required: true
         content:
@@ -133,21 +286,19 @@ paths:
                   type: array
                   items:
                     type: string
-                  description: Core Pokemon names. Usually 1-3 names.
                 candidate_pool:
                   type: array
                   items:
                     type: string
-                  description: Optional Pokemon candidates to prefer.
-                party_size:
-                  type: integer
-                  default: 6
                 refresh:
                   type: boolean
                   default: false
                 battle_format:
                   type: string
                   default: single
+                party_size:
+                  type: integer
+                  default: 6
               required:
                 - core
       responses:
@@ -157,11 +308,50 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  core:
+                    type: array
+                    items:
+                      type: string
+                  recommended_party:
+                    type: array
+                    items:
+                      type: string
+                  candidate_count:
+                    type: integer
+                  unavailable_pokemon:
+                    type: object
+                    properties:
+                      core:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            slug:
+                              type: string
+                            reason:
+                              type: string
+                      candidates:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            input:
+                              type: string
+                            slug:
+                              type: string
+                            reason:
+                              type: string
+                  candidate_policy:
+                    type: string
+                  notes:
+                    type: string
   /team/analyze:
     post:
       operationId: analyzeTeam
-      summary: Analyze a Pokemon team
-      description: Takes a team list and returns inferred role balance, weakness stacking, strengths, and warnings.
+      summary: Analyze a 6 Pokemon team for roles, weaknesses, strengths, and suggestions
       requestBody:
         required: true
         content:
@@ -188,3 +378,45 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  input_team:
+                    type: array
+                    items:
+                      type: string
+                  team:
+                    type: array
+                    items:
+                      type: string
+                  role_counts:
+                    type: object
+                    properties:
+                      summary:
+                        type: string
+                  weakness_stack:
+                    type: object
+                    properties:
+                      summary:
+                        type: string
+                  strengths:
+                    type: array
+                    items:
+                      type: string
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                  unavailable_pokemon:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        input:
+                          type: string
+                        slug:
+                          type: string
+                        reason:
+                          type: string
+                  candidate_policy:
+                    type: string
+                  notes:
+                    type: string
