@@ -1,0 +1,261 @@
+openapi: 3.1.0
+info:
+  title: Pokemon Champions Helper API
+  version: 0.7.0
+  description: OP.GG Pokemon Champions meta lookup and battle advice API for Custom GPT Actions.
+servers:
+  - url: https://YOUR-DEPLOYED-DOMAIN.com
+paths:
+  /health:
+    get:
+      operationId: health
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /pokemon/{name}:
+    get:
+      operationId: getPokemonMeta
+      summary: Get raw Pokemon Champions meta data by Pokemon name
+      description: Returns OP.GG-derived usage data such as common moves, items, abilities, natures, partners, and matchups.
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Korean name, English name, or slug. Example: 한카리아스, 메타그로스, garchomp.
+        - name: refresh
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: If true, fetch live OP.GG data first and update the local cache.
+        - name: battle_format
+          in: query
+          required: false
+          schema:
+            type: string
+            default: single
+          description: Battle format. MVP is optimized for single.
+      responses:
+        '200':
+          description: Pokemon meta data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PokemonMeta'
+  /pokemon/{name}/advice:
+    get:
+      operationId: getPokemonAdvice
+      summary: Get GPT-friendly battle advice for a Pokemon
+      description: Returns a representative estimated set, threat notes, and counterplay based on OP.GG usage data.
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Korean name, English name, or slug. Example: 한카리아스, 메타그로스, garchomp.
+        - name: refresh
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: If true, fetch live OP.GG data first and update the local cache.
+        - name: battle_format
+          in: query
+          required: false
+          schema:
+            type: string
+            default: single
+          description: Battle format. MVP is optimized for single.
+      responses:
+        '200':
+          description: GPT-friendly Pokemon advice
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PokemonAdvice'
+  /cache/refresh:
+    post:
+      operationId: refreshPokemonCache
+      summary: Refresh cache for multiple Pokemon
+      parameters:
+        - name: names
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Comma-separated Pokemon names/slugs. Example: 한카리아스,메타그로스,garchomp
+        - name: battle_format
+          in: query
+          required: false
+          schema:
+            type: string
+            default: single
+      responses:
+        '200':
+          description: Refresh results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+  /cache/slugs:
+    get:
+      operationId: listCachedPokemon
+      summary: List cached Pokemon slugs
+      responses:
+        '200':
+          description: Cached slugs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slugs:
+                    type: array
+                    items:
+                      type: string
+components:
+  schemas:
+    RateEntry:
+      type: object
+      properties:
+        name:
+          type: string
+        rate:
+          type: number
+          nullable: true
+        description:
+          type: string
+          nullable: true
+    PokemonSummary:
+      type: object
+      properties:
+        role:
+          type: string
+          nullable: true
+        common_moves:
+          type: array
+          items:
+            $ref: '#/components/schemas/RateEntry'
+        common_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RateEntry'
+        common_abilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/RateEntry'
+        common_natures:
+          type: array
+          items:
+            $ref: '#/components/schemas/RateEntry'
+        common_evs:
+          type: array
+          items:
+            type: string
+        partners:
+          type: array
+          items:
+            $ref: '#/components/schemas/RateEntry'
+        winning_matchups:
+          type: array
+          items:
+            $ref: '#/components/schemas/RateEntry'
+        losing_matchups:
+          type: array
+          items:
+            $ref: '#/components/schemas/RateEntry'
+    PokemonMeta:
+      type: object
+      properties:
+        pokemon:
+          type: string
+        ko_name:
+          type: string
+          nullable: true
+        slug:
+          type: string
+        source:
+          type: string
+        updated_at:
+          type: string
+          nullable: true
+        battle_format:
+          type: string
+        data_quality:
+          type: string
+        summary:
+          $ref: '#/components/schemas/PokemonSummary'
+        notes:
+          type: string
+          nullable: true
+    RepresentativeSet:
+      type: object
+      properties:
+        label:
+          type: string
+        nature:
+          type: string
+          nullable: true
+        ability:
+          type: string
+          nullable: true
+        item:
+          type: string
+          nullable: true
+        moves:
+          type: array
+          items:
+            type: string
+        evidence:
+          type: object
+    PokemonAdvice:
+      type: object
+      properties:
+        pokemon:
+          type: string
+        ko_name:
+          type: string
+          nullable: true
+        slug:
+          type: string
+        source:
+          type: string
+        updated_at:
+          type: string
+          nullable: true
+        battle_format:
+          type: string
+        data_quality:
+          type: string
+        representative_set:
+          $ref: '#/components/schemas/RepresentativeSet'
+        threat_notes:
+          type: array
+          items:
+            type: string
+        counterplay:
+          type: array
+          items:
+            type: string
+        related:
+          type: object
+        notes:
+          type: string
