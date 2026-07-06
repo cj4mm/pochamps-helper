@@ -7,10 +7,17 @@ from app.models import PokemonMeta
 from app.services.cache_store import get_cached_meta, list_cached_slugs, upsert_cached_meta
 from app.services.name_resolver import normalize_name
 from app.services.opgg_scraper import fetch_opgg_meta, fetch_opgg_debug
+from app.services.team_logic import (
+    DEFAULT_BUILD_CANDIDATES,
+    analyze_team,
+    build_party,
+    selection_recommendations,
+    summarize_profile,
+)
 
 app = FastAPI(
     title="Pokemon Champions Helper API",
-    version="0.7.0",
+    version="0.10.0",
     description="Pokemon Champions meta/sample lookup API for Custom GPT Actions.",
 )
 
@@ -261,3 +268,93 @@ def refresh_pokemon_cache(
 @app.get("/cache/slugs", operation_id="listCachedPokemon")
 def get_cached_slugs():
     return {"slugs": list_cached_slugs()}
+
+
+
+def _as_payload(meta: Any) -> Dict[str, Any]:
+    if hasattr(meta, "model_dump"):
+        return meta.model_dump(mode="json")
+    return dict(meta)
+
+
+def _load_meta_for_team(name: str, refresh: bool, battle_format: str) -> Dict[str, Any]:
+    # Team endpoints use the same cache/live logic as /pokemon.
+    meta = get_pokemon_meta(name=name, refresh=refresh, battle_format=battle_format)
+    return _as_payload(meta)
+
+
+@app.post("/team/analyze", operation_id="analyzeTeam")
+def analyze_team_endpoint(body: Dict[str, Any]):
+    team = body.get("team") or body.get("my_team") or []
+    refresh = bool(body.get("refresh", False))
+    battle_format = body.get("battle_format", "single")
+    if not isinstance(team, list) or not team:
+        raise HTTPException(status_code=400, detail="team must be a non-empty list of Pokemon names")
+    metas = [_load_meta_for_team(str(name), refresh, battle_format) for name in team]
+    return analyze_team(metas)
+
+
+@app.post("/team/selection", operation_id="recommendTeamSelection")
+def recommend_team_selection(body: Dict[str, Any]):
+    my_team = body.get("my_team") or []
+    opponent_team = body.get("opponent_team") or []
+    refresh = bool(body.get("refresh", False))
+    battle_format = body.get("battle_format", "single")
+    top_n = int(body.get("top_n", 3))
+    if not isinstance(my_team, list) or len(my_team) < 3:
+        raise HTTPException(status_code=400, detail="my_team must contain at least 3 Pokemon names")
+    if not isinstance(opponent_team, list) or not opponent_team:
+        raise HTTPException(status_code=400, detail="opponent_team must contain at least 1 Pokemon name")
+    my_metas = [_load_meta_for_team(str(name), refresh, battle_format) for name in my_team[:6]]
+    opp_metas = [_load_meta_for_team(str(name), refresh, battle_format) for name in opponent_team[:6]]
+    recs = selection_recommendations(my_metas, opp_metas, top_n=max(1, min(top_n, 5)))
+    return {
+        "my_team": [m.get("pokemon") or m.get("ko_name") or m.get("slug") for m in my_metas],
+        "opponent_team": [m.get("pokemon") or m.get("ko_name") or m.get("slug") for m in opp_metas],
+        "recommended_selections": recs,
+        "notes": "3마리 선출 추천은 OP.GG 대표 사용률, 타입/역할 휴리스틱, 6C3 조합 점수 기반임. 실제 확정 대미지/스피드는 별도 계산 필요.",
+    }
+
+
+@app.post("/team/build", operation_id="buildRecommendedParty")
+def build_recommended_party(body: Dict[str, Any]):
+    core = body.get("core") or body.get("pokemon") or []
+    refresh = bool(body.get("refresh", False))
+    battle_format = body.get("battle_format", "single")
+    party_size = int(body.get("party_size", 6))
+    if isinstance(core, str):
+        core = [core]
+    if not isinstance(core, list) or not core:
+        raise HTTPException(status_code=400, detail="core must be a non-empty list of Pokemon names")
+    core_metas = [_load_meta_for_team(str(name), refresh, battle_format) for name in core[:3]]
+
+    # Candidate pool: OP.GG partners of core + optional user candidates + default meta-ish pool.
+    candidates = []
+    for m in core_metas:
+        candidates.extend([p.get("name") for p in m.get("summary", {}).get("partners", []) if p.get("name")])
+    user_pool = body.get("candidate_pool") or []
+    if isinstance(user_pool, list):
+        candidates.extend([str(x) for x in user_pool])
+    candidates.extend(DEFAULT_BUILD_CANDIDATES)
+    # Keep order/dedupe.
+    deduped = []
+    for c in candidates:
+        if c and c not in deduped:
+            deduped.append(c)
+
+    candidate_metas = []
+    for name in deduped[:40]:
+        try:
+            candidate_metas.append(_load_meta_for_team(str(name), refresh=False, battle_format=battle_format))
+        except Exception:
+            # Some Korean partner names may not be in name map yet. Skip instead of failing the whole build.
+            continue
+    result = build_party(core_metas, candidate_metas, party_size=max(len(core_metas), min(party_size, 6)))
+    result["candidate_count"] = len(candidate_metas)
+    return result
+
+
+@app.get("/pokemon/{name}/profile", operation_id="getPokemonProfile")
+def get_pokemon_profile(name: str, refresh: bool = Query(False), battle_format: str = Query("single")):
+    meta = _load_meta_for_team(name, refresh, battle_format)
+    return summarize_profile(meta)
